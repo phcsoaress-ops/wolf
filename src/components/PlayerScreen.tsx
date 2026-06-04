@@ -393,14 +393,42 @@ export function PlayerScreen({ gameState, sendAction, myId, reactions, ghostMess
        const alivePlayersCount = gameState.players.filter(p => !p.isModerator && p.isAlive).length;
        const votedCount = Object.keys(gameState.votes).length;
 
+       // Live tally — day votes are public, so everyone can see who is getting votes.
+       const voteCounts: Record<string, number> = {};
+       let skipCount = 0;
+       Object.values(gameState.votes).forEach(t => {
+          if (t === 'skip') skipCount++;
+          else voteCounts[t] = (voteCounts[t] || 0) + 1;
+       });
+       const tally = Object.entries(voteCounts).sort((a, b) => b[1] - a[1]);
+
        if (gameState.votes[me.id]) {
          return (
             <div className="min-h-screen bg-[#C679FF] flex flex-col items-center justify-center p-6 text-center">
                <p className="text-3xl font-extrabold text-white">Vote Registered!</p>
-               <p className="text-purple-100 mt-4 text-lg">Waiting for other players...</p>
-               <p className="text-white font-bold bg-white/20 rounded-full px-6 py-2 mt-8 text-xl">
+               <p className="text-purple-100 mt-3 text-lg">Waiting for other players...</p>
+               <p className="text-white font-bold bg-white/20 rounded-full px-6 py-2 mt-6 text-xl">
                   {votedCount} / {alivePlayersCount} Voted
                </p>
+
+               <div className="w-full max-w-sm mt-8 space-y-2">
+                  {tally.length === 0 && skipCount === 0 && (
+                     <p className="text-purple-100/80">No votes counted yet.</p>
+                  )}
+                  {tally.map(([id, count]) => (
+                     <div key={id} className="flex items-center gap-3 bg-white/15 rounded-2xl px-4 py-3">
+                        <Avatar name={gameState.players.find(p => p.id === id)?.name || '?'} size={36} />
+                        <span className="font-bold text-white flex-1 text-left truncate">{gameState.players.find(p => p.id === id)?.name}{id === me.id ? ' (You)' : ''}</span>
+                        <span className="bg-white text-[#C679FF] font-black rounded-full min-w-9 h-9 px-3 flex items-center justify-center text-lg">{count}</span>
+                     </div>
+                  ))}
+                  {skipCount > 0 && (
+                     <div className="flex items-center justify-between bg-white/10 rounded-2xl px-4 py-3">
+                        <span className="font-bold text-white/80">Skip / No lynch</span>
+                        <span className="bg-white/30 text-white font-black rounded-full min-w-9 h-9 px-3 flex items-center justify-center text-lg">{skipCount}</span>
+                     </div>
+                  )}
+               </div>
             </div>
          );
        }
@@ -416,16 +444,24 @@ export function PlayerScreen({ gameState, sendAction, myId, reactions, ghostMess
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-4 pt-4">
-               {gameState.players.filter(p => !p.isModerator && p.isAlive).map(p => (
-                  <button 
+               {gameState.players.filter(p => !p.isModerator && p.isAlive).map(p => {
+                  const received = voteCounts[p.id] || 0;
+                  return (
+                  <button
                      key={p.id}
                      onClick={() => setConfirmVoteTarget(p.id)}
-                     className="w-full py-6 bg-white hover:bg-gray-100 text-[#C679FF] rounded-2xl text-2xl font-bold transition-transform active:scale-95 shadow-xl flex justify-between px-6 items-center"
+                     className="w-full py-5 bg-white hover:bg-gray-100 text-[#C679FF] rounded-2xl text-2xl font-bold transition-transform active:scale-95 shadow-xl flex justify-between px-5 items-center gap-3"
                   >
-                     <span>{p.name}</span>
-                     {p.id === me.id && <span className="opacity-50 text-sm">(You)</span>}
+                     <span className="flex items-center gap-3 min-w-0">
+                        <Avatar name={p.name} size={40} />
+                        <span className="truncate">{p.name}{p.id === me.id && <span className="opacity-50 text-base"> (You)</span>}</span>
+                     </span>
+                     {received > 0 && (
+                        <span className="bg-[#C679FF] text-white font-black rounded-full min-w-9 h-9 px-3 flex items-center justify-center text-lg shadow">{received}</span>
+                     )}
                   </button>
-               ))}
+                  );
+               })}
                <button 
                  onClick={() => setConfirmVoteTarget('skip')}
                  className="w-full py-6 bg-transparent hover:bg-white/10 text-white border-2 border-white/50 rounded-2xl text-xl font-bold transition-all active:scale-95 shadow-sm"
