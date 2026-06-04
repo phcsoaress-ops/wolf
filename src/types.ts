@@ -59,6 +59,7 @@ export type ClientAction =
   | { type: 'JOIN'; name: string; isModerator: boolean; roomCode: string }
   | { type: 'START_GAME'; settings: GameState['settings'] }
   | { type: 'NEXT_PHASE' } // Moderator manual advance
+  | { type: 'SKIP_TO_VOTE' } // Any living player can end the discussion early
   | { type: 'SEER_SEE'; targetId: string }
   | { type: 'SEER_CONFIRM' }
   | { type: 'WOLF_VOTE'; targetId: string }

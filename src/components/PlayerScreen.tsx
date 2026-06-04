@@ -348,6 +348,13 @@ export function PlayerScreen({ gameState, sendAction, myId, reactions, ghostMess
             </div>
             <p className="text-white font-medium text-xl mt-8 relative z-10">Who is the werewolf?</p>
 
+            <button
+               onClick={() => sendAction({ type: 'SKIP_TO_VOTE' })}
+               className="mt-8 relative z-10 bg-white text-[#C679FF] font-black text-lg py-4 px-8 rounded-2xl shadow-xl active:scale-95 transition-transform hover:bg-purple-50"
+            >
+               Go to voting →
+            </button>
+
             <div className="absolute inset-0 pointer-events-none flex items-end justify-center pb-40">
                 <AnimatePresence>
                    {reactions.map(r => {

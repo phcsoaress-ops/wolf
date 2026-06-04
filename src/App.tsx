@@ -14,11 +14,10 @@ export default function App() {
   useEffect(() => {
     if (!gameState) return;
 
-    // Atmospheric ambience: a tense pad at night, a calmer one by day.
+    // Atmospheric ambience: a tense pad at night only. Daytime/discussion plays
+    // no background music (kept silent on purpose).
     if (gameState.status.startsWith('NIGHT') || gameState.status === 'ROLE_REVEAL') {
       startAmbience('night');
-    } else if (gameState.status.startsWith('DAY')) {
-      startAmbience('day');
     } else {
       stopAmbience();
     }

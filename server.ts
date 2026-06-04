@@ -494,6 +494,18 @@ async function startServer() {
           }
           break;
         }
+        case 'SKIP_TO_VOTE': {
+           // Any living player can cut the discussion short and start the vote.
+           if (state.status === 'DAY_DISCUSS') {
+              const p = state.players.find(p => p.socketId === socket.id);
+              if (p && p.isAlive) {
+                 state.votes = {};
+                 setPhase(state, 'DAY_VOTING', 30);
+                 changed = true;
+              }
+           }
+           break;
+        }
         case 'SEER_SEE': {
            // Only one inspection per night, and it cannot be re-rolled.
            if (state.status === 'NIGHT_SEER' && !state.nightResult.seerSeenId) {
