@@ -1,0 +1,6 @@
+{
+  "name": "Cidade Dorme",
+  "description": "Jogo multijogador em tempo real baseado em One Night Ultimate Werewolf para jogar com a turma.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

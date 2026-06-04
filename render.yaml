@@ -1,0 +1,14 @@
+# Render Blueprint — deploy "Cidade Dorme" as a single Node web service that
+# serves the built front-end AND runs the Socket.IO multiplayer server.
+# In Render: New + -> Blueprint -> pick this repo, and these settings auto-fill.
+services:
+  - type: web
+    name: cidade-dorme
+    runtime: node
+    plan: free            # free tier: single instance (required — rooms live in memory)
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true       # redeploy automatically on every git push
+    envVars:
+      - key: NODE_ENV
+        value: production  # makes the server serve dist/ instead of the Vite dev server
