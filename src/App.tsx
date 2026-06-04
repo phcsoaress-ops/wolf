@@ -54,7 +54,10 @@ export default function App() {
     }
   }, [gameState, myId]);
 
-  if (!gameState || !myId) {
+  // Only wait for the socket connection (myId). The gameState arrives *after*
+  // we JOIN a room, so it must not gate the join screen — otherwise we'd wait
+  // forever for data that only comes once the player acts.
+  if (!myId) {
     return (
       <div className="min-h-screen bg-neutral-900 flex items-center justify-center text-white">
         <p className="text-xl animate-pulse">Conectando...</p>
@@ -62,10 +65,10 @@ export default function App() {
     );
   }
 
-  const me = gameState.players.find(p => p.id === myId);
+  const me = gameState?.players.find(p => p.id === myId);
 
   // Show the join screen until the server confirms we are in the room.
-  if (!hasJoined || !me) {
+  if (!hasJoined || !gameState || !me) {
     return (
       <>
         <JoinScreen onJoin={(name, isMod, roomCode) => {
