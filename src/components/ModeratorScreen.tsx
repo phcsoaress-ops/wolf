@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { GameState, ClientAction } from '../types';
 import { getRoleColor, RoleIcon } from './RoleUI';
-import { Users, Skull, Play, SkipForward, FlaskConical } from 'lucide-react';
+import { Users, Skull, Play, SkipForward, FlaskConical, Volume2, VolumeX } from 'lucide-react';
 import { Avatar } from './Avatar';
 
-export function ModeratorScreen({ gameState, sendAction }: { gameState: GameState, sendAction: (a: ClientAction) => void, myId: string }) {
+export function ModeratorScreen({ gameState, sendAction, muted, onToggleMute }: { gameState: GameState, sendAction: (a: ClientAction) => void, myId: string, muted: boolean, onToggleMute: () => void }) {
   const [numWolves, setNumWolves] = useState(1);
   const [numSeers, setNumSeers] = useState(1);
   const [numDoctors, setNumDoctors] = useState(1);
@@ -83,13 +83,22 @@ export function ModeratorScreen({ gameState, sendAction }: { gameState: GameStat
             {isReady ? 'Start Game' : `Not enough players`}
           </button>
           
-          <button 
-            onClick={() => sendAction({ type: 'ADD_BOT' })}
-            className="w-1/3 py-6 bg-purple-600 hover:bg-purple-500 rounded-2xl font-bold text-white shadow-xl transition-all active:scale-95 flex flex-col items-center justify-center leading-tight px-2 text-center"
-          >
-            <span className="text-xs md:text-sm font-medium opacity-80">Test auto</span>
-            <span className="text-lg md:text-xl">+1 Bot</span>
-          </button>
+          <div className="w-1/3 flex flex-col gap-2">
+            <button
+              onClick={() => sendAction({ type: 'ADD_BOT' })}
+              className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-2xl font-bold text-white shadow-xl transition-all active:scale-95 flex flex-col items-center justify-center leading-tight px-2 text-center"
+            >
+              <span className="text-xs font-medium opacity-80">Test auto</span>
+              <span className="text-lg">+1 Bot</span>
+            </button>
+            <button
+              onClick={() => sendAction({ type: 'REMOVE_BOT' })}
+              disabled={players.filter(p => p.isBot).length === 0}
+              className="flex-1 py-3 bg-purple-900/40 hover:bg-purple-900/60 disabled:opacity-40 disabled:cursor-not-allowed rounded-2xl font-bold text-white shadow transition-all active:scale-95 text-lg"
+            >
+              −1 Bot
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -100,11 +109,16 @@ export function ModeratorScreen({ gameState, sendAction }: { gameState: GameStat
     let subtitle = '';
     let phaseColor = 'text-white';
     let canAdvance = true;
-    
+    let advanceDisabled = false; // hard block (cannot even force-advance)
+
     switch(gameState.status) {
        case 'ROLE_REVEAL':
           title = 'Role Reveal';
-          subtitle = 'Players are viewing their secret identities.';
+          // Players are guaranteed at least the full reveal time — host can't skip.
+          advanceDisabled = gameState.timerSeconds > 0;
+          subtitle = advanceDisabled
+            ? `Players are viewing their secret identities... ${gameState.timerSeconds}s`
+            : 'Reveal time is over — advance when ready.';
           break;
        case 'NIGHT_START':
           title = 'The City Sleeps';
@@ -153,14 +167,13 @@ export function ModeratorScreen({ gameState, sendAction }: { gameState: GameStat
            <p className="text-orange-100 text-lg">{subtitle}</p>
         </div>
 
-        <button 
+        <button
           onClick={() => sendAction({ type: 'NEXT_PHASE' })}
-          className={`w-full py-6 rounded-2xl font-black text-2xl flex justify-center items-center gap-3 transition-transform active:scale-95 shadow-2xl ${
-             canAdvance ? 'bg-orange-500 hover:bg-orange-400' : 'bg-orange-500 hover:bg-orange-400'
-          }`}
+          disabled={advanceDisabled}
+          className="w-full py-6 rounded-2xl font-black text-2xl flex justify-center items-center gap-3 transition-transform active:scale-95 shadow-2xl bg-orange-500 hover:bg-orange-400 disabled:bg-neutral-500 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <SkipForward className="w-8 h-8" /> 
-          {canAdvance ? 'Advance Phase' : 'Force Advance'}
+          <SkipForward className="w-8 h-8" />
+          {advanceDisabled ? `Wait ${gameState.timerSeconds}s` : (canAdvance ? 'Advance Phase' : 'Force Advance')}
         </button>
         
         {['DAY_DISCUSS'].includes(gameState.status) && (
@@ -219,6 +232,9 @@ export function ModeratorScreen({ gameState, sendAction }: { gameState: GameStat
         {gameState.status !== 'LOBBY' && gameState.status !== 'END' && renderActivePhase()}
         {gameState.status === 'END' && renderEnd()}
       </div>
+      <button onClick={onToggleMute} aria-label={muted ? 'Ligar som' : 'Desligar som'} className="fixed bottom-6 left-6 z-50 w-14 h-14 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center shadow-2xl transition-transform active:scale-90 border-2 border-white/20 backdrop-blur-sm">
+         {muted ? <VolumeX className="w-7 h-7 text-white" /> : <Volume2 className="w-7 h-7 text-white" />}
+      </button>
     </div>
   );
 }

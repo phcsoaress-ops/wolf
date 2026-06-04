@@ -1,21 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState, ClientAction, Role, Player } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { getRoleColor, RoleIcon, ROLE_DESCRIPTIONS } from './RoleUI';
-import { Moon, Sun, User, HelpCircle, Eye, EyeOff, AlertCircle, FlaskConical, Skull, HeartPulse } from 'lucide-react';
+import { Moon, Sun, User, HelpCircle, Eye, EyeOff, AlertCircle, FlaskConical, Skull, HeartPulse, Volume2, VolumeX } from 'lucide-react';
 import { RoleGuide } from './RoleGuide';
 import { Avatar } from './Avatar';
 import { playPotion } from '../lib/audio';
 
 import { Reaction, GhostMessage } from '../hooks/useGameClient';
 
-export function PlayerScreen({ gameState, sendAction, myId, reactions, ghostMessages, wolfMessages }: { gameState: GameState, sendAction: (a: ClientAction) => void, myId: string, reactions: Reaction[], ghostMessages: GhostMessage[], wolfMessages: GhostMessage[] }) {
+export function PlayerScreen({ gameState, sendAction, myId, reactions, ghostMessages, wolfMessages, muted, onToggleMute }: { gameState: GameState, sendAction: (a: ClientAction) => void, myId: string, reactions: Reaction[], ghostMessages: GhostMessage[], wolfMessages: GhostMessage[], muted: boolean, onToggleMute: () => void }) {
   const me = gameState.players.find(p => p.id === myId);
   const [showRoleGuide, setShowRoleGuide] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
   const [confirmVoteTarget, setConfirmVoteTarget] = useState<string | null>(null);
   const [ghostChatInput, setGhostChatInput] = useState('');
   const [wolfChatInput, setWolfChatInput] = useState('');
+
+  // Clear leftover local UI state between phases so a stale pick from the
+  // previous round can't re-open the confirm modal pre-selected.
+  useEffect(() => {
+    if (gameState.status !== 'DAY_VOTING') setConfirmVoteTarget(null);
+    if (gameState.status === 'LOBBY') setIsRevealed(false);
+  }, [gameState.status]);
 
   if (!me) return null;
 
@@ -348,13 +355,6 @@ export function PlayerScreen({ gameState, sendAction, myId, reactions, ghostMess
             </div>
             <p className="text-white font-medium text-xl mt-8 relative z-10">Who is the werewolf?</p>
 
-            <button
-               onClick={() => sendAction({ type: 'SKIP_TO_VOTE' })}
-               className="mt-8 relative z-10 bg-white text-[#C679FF] font-black text-lg py-4 px-8 rounded-2xl shadow-xl active:scale-95 transition-transform hover:bg-purple-50"
-            >
-               Go to voting →
-            </button>
-
             <div className="absolute inset-0 pointer-events-none flex items-end justify-center pb-40">
                 <AnimatePresence>
                    {reactions.map(r => {
@@ -446,7 +446,7 @@ export function PlayerScreen({ gameState, sendAction, myId, reactions, ghostMess
                            </p>
                         </div>
                         <div className="flex flex-col gap-3">
-                           <button onClick={() => sendAction({ type: 'DAY_VOTE', targetId: confirmVoteTarget })} className="w-full py-5 bg-orange-500 hover:bg-orange-400 text-white rounded-xl font-bold text-xl shadow-lg transition-transform active:scale-95">Confirm</button>
+                           <button onClick={() => { sendAction({ type: 'DAY_VOTE', targetId: confirmVoteTarget }); setConfirmVoteTarget(null); }} className="w-full py-5 bg-orange-500 hover:bg-orange-400 text-white rounded-xl font-bold text-xl shadow-lg transition-transform active:scale-95">Confirm</button>
                            <button onClick={() => setConfirmVoteTarget(null)} className="w-full py-5 bg-gray-100 text-gray-500 hover:bg-gray-200 rounded-xl font-bold transition-colors">Cancel</button>
                         </div>
                      </div>
@@ -486,6 +486,9 @@ export function PlayerScreen({ gameState, sendAction, myId, reactions, ghostMess
   return (
     <>
       {renderPhase()}
+      <button onClick={onToggleMute} aria-label={muted ? 'Ligar som' : 'Desligar som'} className="fixed bottom-6 left-6 z-50 w-14 h-14 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center shadow-2xl transition-transform active:scale-90 border-2 border-white/20 backdrop-blur-sm">
+         {muted ? <VolumeX className="w-7 h-7 text-white/90" /> : <Volume2 className="w-7 h-7 text-white/90" />}
+      </button>
       <button onClick={() => setShowRoleGuide(true)} className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-orange-500 hover:bg-orange-400 rounded-full flex items-center justify-center shadow-2xl transition-transform active:scale-90 border-2 border-orange-400/50">
          <HelpCircle className="w-8 h-8 text-white drop-shadow-md" />
       </button>

@@ -3,20 +3,29 @@ import { useGameClient } from './hooks/useGameClient';
 import { JoinScreen } from './components/JoinScreen';
 import { ModeratorScreen } from './components/ModeratorScreen';
 import { PlayerScreen } from './components/PlayerScreen';
-import { playNightTransition, playDayTransition, playTick, playVictory, playDefeat, startAmbience, stopAmbience, playDeath } from './lib/audio';
+import { playNightTransition, playDayTransition, playTick, playVictory, playDefeat, startAmbience, stopAmbience, playDeath, setMuted } from './lib/audio';
 
 export default function App() {
   const { gameState, myId, reactions, ghostMessages, wolfMessages, sendAction, error } = useGameClient();
   const [hasJoined, setHasJoined] = useState(false);
+  const [muted, setMutedState] = useState(() => localStorage.getItem('cd_muted') === '1');
   const lastStateRef = useRef<string | null>(null);
   const lastTimerRef = useRef<number | null>(null);
+
+  // Keep the audio engine and localStorage in sync with the mute preference.
+  useEffect(() => {
+    setMuted(muted);
+    localStorage.setItem('cd_muted', muted ? '1' : '0');
+  }, [muted]);
+
+  const toggleMute = () => setMutedState(m => !m);
 
   useEffect(() => {
     if (!gameState) return;
 
     // Atmospheric ambience: a tense pad at night only. Daytime/discussion plays
     // no background music (kept silent on purpose).
-    if (gameState.status.startsWith('NIGHT') || gameState.status === 'ROLE_REVEAL') {
+    if (!muted && (gameState.status.startsWith('NIGHT') || gameState.status === 'ROLE_REVEAL')) {
       startAmbience('night');
     } else {
       stopAmbience();
@@ -51,7 +60,7 @@ export default function App() {
         }
         lastTimerRef.current = gameState.timerSeconds;
     }
-  }, [gameState, myId]);
+  }, [gameState, myId, muted]);
 
   // Only wait for the socket connection (myId). The gameState arrives *after*
   // we JOIN a room, so it must not gate the join screen — otherwise we'd wait
@@ -84,9 +93,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#C679FF] text-white font-sans selection:bg-white/30">
       {me.isModerator ? (
-        <ModeratorScreen gameState={gameState} sendAction={sendAction} myId={myId} />
+        <ModeratorScreen gameState={gameState} sendAction={sendAction} myId={myId} muted={muted} onToggleMute={toggleMute} />
       ) : (
-        <PlayerScreen gameState={gameState} sendAction={sendAction} myId={myId} reactions={reactions} ghostMessages={ghostMessages} wolfMessages={wolfMessages} />
+        <PlayerScreen gameState={gameState} sendAction={sendAction} myId={myId} reactions={reactions} ghostMessages={ghostMessages} wolfMessages={wolfMessages} muted={muted} onToggleMute={toggleMute} />
       )}
       {error && <ErrorBanner message={error} />}
     </div>

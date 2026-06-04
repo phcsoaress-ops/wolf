@@ -1,4 +1,5 @@
 let audioCtx: AudioContext | null = null;
+let muted = false;
 
 export function initAudio() {
   if (!audioCtx) {
@@ -9,8 +10,19 @@ export function initAudio() {
   }
 }
 
+// Players can turn sound on/off. When muted, every cue is suppressed and any
+// running ambience is faded out.
+export function setMuted(value: boolean) {
+  muted = value;
+  if (muted) stopAmbience();
+}
+
+export function isMuted(): boolean {
+  return muted;
+}
+
 export function playNightTransition() {
-  if (!audioCtx) return;
+  if (!audioCtx || muted) return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   
@@ -30,7 +42,7 @@ export function playNightTransition() {
 }
 
 export function playDayTransition() {
-  if (!audioCtx) return;
+  if (!audioCtx || muted) return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   
@@ -51,7 +63,7 @@ export function playDayTransition() {
 }
 
 export function playTick() {
-  if (!audioCtx) return;
+  if (!audioCtx || muted) return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   
@@ -70,7 +82,7 @@ export function playTick() {
 }
 
 export function playVictory() {
-  if (!audioCtx) return;
+  if (!audioCtx || muted) return;
   const now = audioCtx.currentTime;
   const notes = [440, 554, 659, 880];
   
@@ -95,7 +107,7 @@ export function playVictory() {
 }
 
 export function playDefeat() {
-  if (!audioCtx) return;
+  if (!audioCtx || muted) return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
 
@@ -122,7 +134,7 @@ let ambienceNodes: { osc: OscillatorNode; osc2: OscillatorNode; gain: GainNode; 
 let currentAmbience: Ambience | null = null;
 
 export function startAmbience(kind: Ambience) {
-  if (!audioCtx) return;
+  if (!audioCtx || muted) return;
   if (currentAmbience === kind && ambienceNodes) return; // already playing
   stopAmbience();
 
@@ -184,7 +196,7 @@ export function stopAmbience() {
 
 // Witch potion: a quick magical shimmer.
 export function playPotion() {
-  if (!audioCtx) return;
+  if (!audioCtx || muted) return;
   const now = audioCtx.currentTime;
   [880, 1320, 1760].forEach((freq, i) => {
     const osc = audioCtx!.createOscillator();
@@ -204,7 +216,7 @@ export function playPotion() {
 
 // A death sting for the sunrise announcement when someone died.
 export function playDeath() {
-  if (!audioCtx) return;
+  if (!audioCtx || muted) return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = 'sawtooth';

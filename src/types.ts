@@ -71,6 +71,7 @@ export type ClientAction =
   | { type: 'WITCH_PASS' }                  // finish the Witch's turn
   | { type: 'DAY_VOTE'; targetId: string }
   | { type: 'ADD_BOT' }
+  | { type: 'REMOVE_BOT' }
   | { type: 'RESTART' }
   | { type: 'EMOJI_REACTION'; emoji: string }
   | { type: 'GHOST_CHAT'; text?: string; emoji?: string };

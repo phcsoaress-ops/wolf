@@ -413,6 +413,16 @@ async function startServer() {
           }
           break;
         }
+        case 'REMOVE_BOT': {
+          const p = state.players.find(p => p.socketId === socket.id);
+          if (p?.isModerator && state.status === 'LOBBY') {
+            // Remove the most recently added bot.
+            for (let i = state.players.length - 1; i >= 0; i--) {
+              if (state.players[i].isBot) { state.players.splice(i, 1); changed = true; break; }
+            }
+          }
+          break;
+        }
         case 'START_GAME': {
           const p = state.players.find(p => p.socketId === socket.id);
           if (p?.isModerator && state.status === 'LOBBY') {
@@ -467,6 +477,10 @@ async function startServer() {
         case 'NEXT_PHASE': {
           const p = state.players.find(p => p.socketId === socket.id);
           if (p?.isModerator) {
+             // Guarantee players get at least the full reveal time to read their
+             // role — the host cannot skip ROLE_REVEAL until the timer runs out.
+             if (state.status === 'ROLE_REVEAL' && state.timerSeconds > 0) break;
+
              if (state.status === 'ROLE_REVEAL') {
                 resetNight(state);
                 setPhase(state, 'NIGHT_START', 4);
@@ -495,10 +509,10 @@ async function startServer() {
           break;
         }
         case 'SKIP_TO_VOTE': {
-           // Any living player can cut the discussion short and start the vote.
+           // Only the host may cut the discussion short and start the vote.
            if (state.status === 'DAY_DISCUSS') {
               const p = state.players.find(p => p.socketId === socket.id);
-              if (p && p.isAlive) {
+              if (p?.isModerator) {
                  state.votes = {};
                  setPhase(state, 'DAY_VOTING', 30);
                  changed = true;
